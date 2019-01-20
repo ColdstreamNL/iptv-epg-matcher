@@ -1,21 +1,29 @@
+## needs massive work on the actual stuff it does now, needs cleaning m3u items with some regex and probably some
+## common stuff like 1080P, VIP, whatever and probably a phase where it does leveitherm based fixing?
+
 import difflib
 import xml.etree.ElementTree as ET
+from typing import List
+
+from m3u.channel import Channel
 from m3u.m3u import M3u
 
 m3u = M3u()
-channels = m3u.parse('lista1.m3u')
+channels: List[Channel] = m3u.parse('list.m3u')
 
-# Parse guide XML
-tree = ET.parse('guide.xml')
+# Simple XML parsing
+tree = ET.parse('xmltv.xml')
 root = tree.getroot()
 
+# Simple channel-id grabbing from XML
 for channel in root.findall('channel'):
     id = channel.get('id')
 
+# Old code that will need massive changes
 # Loop channels and find the best suit
 for channel in channels:
     best = {
-        'id' : '',
+        'CHANNEL_NAME' : '',
         'percentage' : 0
     }
 
@@ -27,15 +35,16 @@ for channel in channels:
             continue
 
         # Get similiarity
-        percentage = difflib.SequenceMatcher(None, channel.name.lower(), id.lower() ).ratio()
+        percentage = difflib.SequenceMatcher(None, channel.CHANNEL_NAME.lower(), id.lower() ).ratio()
 
         # If higher than what we have now, save it
         if percentage > best['percentage'] and percentage >= 0.50:
-            best['id'] = id
+            best['CHANNEL_NAME'] = id
             best['percentage'] = percentage
     
-    # overwrite current tvgId
-    channel.tvgId = best['id']
+    # overwrite tvg-id and channel-name
+    channel.TVG_ID = best['CHANNEL_NAME']
+    channel.CHANNEL_NAME = best['CHANNEL_NAME']
 
-# Write file with epg
-m3u.buildFile(channels, 'lista1_epg.m3u')
+# Output
+m3u.buildFile(channels, 'list_out.m3u')
